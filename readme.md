@@ -1,5 +1,5 @@
 # XIQ VIQ Backup / Restore
-### xiq_backup_restore
+### xiq_backup_restore.py
 ## Purpose
 This script preforms 3 different functions. When ran the user will be presented with options to select which function should be preformed. 
 1) The backup the configuration for the VIQ - Which can be restored if needed from the GUI
