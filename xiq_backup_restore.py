@@ -4,6 +4,7 @@ import sys
 import time
 import logging
 import platform
+import argparse
 import pandas as pd
 import getpass  
 from app.xiq_api import XIQ
@@ -11,7 +12,12 @@ from app.xiq_logger import logger
 logger = logging.getLogger('VIQ_Backup_Restore.Main')
 
 
-VERSION = "v1.0"
+VERSION = "v1.1"
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--external',action="store_true", help="Optional - adds External Account selection, to use an external VIQ")
+args = parser.parse_args()
+
 
 os_ver = platform.system()
 thisfile = os.path.abspath(__file__)
@@ -118,6 +124,41 @@ def login():
         prinfo("script is exiting....")
         exitOnEnter(errCode=2)
     prgood(f"User {XIQ_username} logged in")
+    #OPTIONAL - use externally managed XIQ account
+    if args.external:
+        accounts, viqName = x.selectManagedAccount()
+        if accounts == 1:
+            validResponse = False
+            while validResponse != True:
+                response = input("No External accounts found. Would you like to import data to your network?")
+                if response == 'y':
+                    validResponse = True
+                elif response =='n':
+                    prinfo("script is exiting....")
+                    exitOnEnter(errCode=2)
+        elif accounts:
+            validResponse = False
+            while validResponse != True:
+                print("\nWhich VIQ would you like to execute script against?")
+                accounts_df = pd.DataFrame(accounts)
+                count = 0
+                for df_id, viq_info in accounts_df.iterrows():
+                    print(f"   {df_id}. {viq_info['name']}")
+                    count = df_id
+                print(f"   {count+1}. {viqName} (This is Your main account)\n")
+                selection = input(f"Please enter 0 - {count+1}: ")
+                try:
+                    selection = int(selection)
+                except:
+                    prinfo("Please enter a valid response!!")
+                    continue
+                if 0 <= selection <= count+1:
+                    validResponse = True
+                    if selection != count+1:
+                        newViqID = (accounts_df.loc[int(selection),'id'])
+                        newViqName = (accounts_df.loc[int(selection),'name'])
+                        x.switchAccount(newViqID, newViqName)
+                        prgood(f"User {XIQ_username} logged into {newViqName}")
     time.sleep(2)
 
 def presentMainOptions():
